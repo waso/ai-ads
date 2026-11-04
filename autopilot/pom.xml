@@ -136,6 +136,12 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <!-- Raspberry Pi (64-bit OS): zonky does not pull the arm64 Linux binaries in by itself -->
+      <groupId>io.zonky.test.postgres</groupId>
+      <artifactId>embedded-postgres-binaries-linux-arm64v8</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.tngtech.archunit</groupId>
       <artifactId>archunit-junit5</artifactId>
       <version>${archunit.version}</version>
