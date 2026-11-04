@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ads Autopilot</title>
+  <th:block th:replace="~{_style :: style}"></th:block>
+</head>
+<body>
+  <h1>Ads Autopilot</h1>
+  <p th:if="${flash}" class="card ok" th:text="${flash}"></p>
+
+  <div class="card">
+    <p>Autonomy <strong th:text="${limits.autonomy}"></strong> ·
+       monthly cap <strong th:text="${limits.monthlyCapMicros == null ? 'NOT SET: writes are off' : limits.monthlyCapMicros / 1000000}"></strong></p>
+    <p>Kill switch: <strong th:class="${control.killSwitch} ? 'bad' : 'ok'" th:text="${control.killSwitch} ? 'ON' : 'off'"></strong>
+       <span class="mut" th:if="${control.killReason}" th:text="'(' + ${control.killReason} + ')'"></span></p>
+    <p>Circuit breaker: <strong th:class="${control.breakerOpen} ? 'bad' : 'ok'" th:text="${control.breakerOpen} ? 'OPEN' : 'closed'"></strong>
+       <span class="mut" th:if="${control.breakerOpen}" th:text="'paused: ' + ${control.breakerPausedCampaigns}"></span></p>
+    <p>Claude's reads: <strong th:text="${control.readsPaused} ? 'paused' : 'running'"></strong></p>
+    <div class="row">
+      <form th:action="@{/admin/kill-switch}" method="post" th:unless="${control.killSwitch}">
+        <input type="hidden" name="on" value="true"><input type="text" name="reason" placeholder="Reason" maxlength="200">
+        <div class="row"><button class="stop" type="submit">Turn kill switch on</button></div>
+      </form>
+      <form th:action="@{/admin/kill-switch}" method="post" th:if="${control.killSwitch}">
+        <input type="hidden" name="on" value="false"><button class="go" type="submit">Clear kill switch</button>
+      </form>
+      <form th:action="@{/admin/breaker/clear}" method="post" th:if="${control.breakerOpen}">
+        <button type="submit">Clear circuit breaker</button>
+      </form>
+      <form th:action="@{/admin/reads/resume}" method="post" th:if="${control.readsPaused}">
+        <button type="submit">Resume Claude's reads</button>
+      </form>
+    </div>
+  </div>
+
+  <h2>Open alerts</h2>
+  <p class="mut" th:if="${alerts.isEmpty()}">None.</p>
+  <table th:unless="${alerts.isEmpty()}">
+    <tr th:each="a : ${alerts}"><td th:text="${a.severity}"></td><td th:text="${a.type}"></td><td th:text="${a.message}"></td><td th:text="${a.openedAt}"></td></tr>
+  </table>
+
+  <h2>Proposals waiting for you</h2>
+  <p class="mut" th:if="${proposals.isEmpty()}">None.</p>
+  <table th:unless="${proposals.isEmpty()}">
+    <tr th:each="r : ${proposals}">
+      <td><a th:if="${r.url}" th:href="${r.url}" th:text="${r.p.tool}"></a><span th:unless="${r.url}" th:text="${r.p.tool}"></span></td>
+      <td th:text="${r.p.diff.summary}"></td><td th:text="${r.p.expiresAt}"></td>
+    </tr>
+  </table>
+
+  <h2>Recent changes</h2>
+  <table>
+    <tr th:each="c : ${changes}"><td th:text="${c.createdAt}"></td><td th:text="${c.tool}"></td><td th:text="${c.entityKey}"></td><td th:text="${c.result}"></td><td th:text="${c.actor}"></td></tr>
+  </table>
+</body>
+</html>

@@ -1,0 +1,45 @@
+# Cloud Run alternative when no cluster is already running. Secrets come from Secret Manager, not from this file.
+# Cloud Run Jobs run the watchdog; Cloud Scheduler triggers the job every 15 minutes (see job.yaml).
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: ads-autopilot
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "1"
+        # Private IP to Cloud SQL through a Serverless VPC Access connector: plain JDBC, no extra library.
+        run.googleapis.com/vpc-access-connector: projects/PROJECT_ID/locations/REGION/connectors/ads-autopilot
+        run.googleapis.com/vpc-access-egress: private-ranges-only
+        run.googleapis.com/cpu-throttling: "false"
+    spec:
+      serviceAccountName: ads-autopilot@PROJECT_ID.iam.gserviceaccount.com
+      containers:
+        - image: REGION-docker.pkg.dev/PROJECT_ID/ads/ads-autopilot:0.1.0
+          ports:
+            - containerPort: 8080
+          env:
+            - {name: DB_URL, value: "jdbc:postgresql://CLOUD_SQL_PRIVATE_IP:5432/autopilot?sslmode=require"}
+            - {name: DB_USER, value: autopilot_app}
+            - {name: FLYWAY_USER, value: autopilot_owner}
+            - {name: OWNER_EMAIL, value: owner@example.com}
+            - {name: PUBLIC_BASE_URL, value: "https://autopilot.example.com"}
+            - {name: MCP_AUDIENCE, value: "https://autopilot.example.com/mcp"}
+            - {name: ADS_CUSTOMER_ID, value: "1234567890"}
+            - {name: AUTONOMY_LEVEL, value: L0}
+            - {name: DB_PASSWORD, valueFrom: {secretKeyRef: {name: autopilot-db-password, key: latest}}}
+            - {name: FLYWAY_PASSWORD, valueFrom: {secretKeyRef: {name: autopilot-flyway-password, key: latest}}}
+            - {name: ADS_DEVELOPER_TOKEN, valueFrom: {secretKeyRef: {name: autopilot-ads-developer-token, key: latest}}}
+            - {name: APPROVAL_LINK_SECRET, valueFrom: {secretKeyRef: {name: autopilot-approval-link-secret, key: latest}}}
+            - {name: GOOGLE_OAUTH_CLIENT_SECRET, valueFrom: {secretKeyRef: {name: autopilot-oauth-client-secret, key: latest}}}
+          startupProbe:
+            httpGet: {path: /actuator/health/readiness}
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            failureThreshold: 20
+          resources:
+            limits: {cpu: "1", memory: 768Mi}

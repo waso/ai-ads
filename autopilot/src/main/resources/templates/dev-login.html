@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local sign-in</title>
+  <th:block th:replace="~{_style :: style}"></th:block>
+</head>
+<body>
+  <h1>Local sign-in</h1>
+  <p class="mut">Development login for <strong th:text="${owner}"></strong>. It only works from this machine.</p>
+  <p th:if="${error}" class="card bad" th:text="${error}"></p>
+  <form th:action="@{/dev/login}" method="post" class="card">
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" autofocus required
+           style="font:inherit;padding:8px;width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)">
+    <div class="row"><button class="go" type="submit">Sign in</button></div>
+  </form>
+</body>
+</html>

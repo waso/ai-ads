@@ -1,0 +1,42 @@
+# Everything on one machine (a laptop): a simulated Google Ads account, a form login for the approval pages, static tokens for
+# Claude Code and the watchdog inside the server. Start it with scripts/dev-start.sh; see docs/local-quickstart.md.
+# Set ADS_MODE=google to point the same setup at a real Google Ads account (credentials come from Application Default Credentials).
+server:
+  # The dev login is refused unless the server listens on a loopback address only.
+  address: 127.0.0.1
+  port: ${PORT:8080}
+
+autopilot:
+  owner-email: ${OWNER_EMAIL:owner@local.test}
+  ads:
+    mode: ${ADS_MODE:sandbox}
+  limits:
+    account-id: ${ADS_CUSTOMER_ID:1234567890}
+    # 500 PLN a week = 71.4 PLN a day; x 30.4 = 2,171 PLN; 2,200 PLN leaves room for rounding.
+    monthly-cap-micros: ${MONTHLY_CAP_MICROS:2200000000}
+    autonomy: ${AUTONOMY_LEVEL:L1}
+    allowed-domains: ${ALLOWED_DOMAINS:vibefactory.ai}
+    allowed-geo-targets: ${ALLOWED_GEO_TARGETS:2616}
+    cooldown-hours: ${COOLDOWN_HOURS:168}
+    max-active-campaigns: ${MAX_ACTIVE_CAMPAIGNS:4}
+    min-daily-budget-micros: ${MIN_DAILY_BUDGET_MICROS:5000000}
+  goals:
+    primary-goal: ${PRIMARY_GOAL:paid subscriptions}
+    protected-terms: ${PROTECTED_TERMS:vibefactory}
+  security:
+    dev-login: true
+    dev-login-password: ${DEV_LOGIN_PASSWORD:}
+    public-base-url: ${PUBLIC_BASE_URL:http://localhost:8080}
+    mcp-tokens:
+      triage: ${MCP_TOKEN_TRIAGE:}
+      daily: ${MCP_TOKEN_DAILY:}
+      weekly: ${MCP_TOKEN_WEEKLY:}
+      chat: ${MCP_TOKEN_CHAT:}
+  runs:
+    # Loops may start at any time of day (still one run per window). Set LOOPS_ANY_TIME=false to keep the production windows.
+    any-time: ${LOOPS_ANY_TIME:true}
+  watchdog:
+    in-process: true
+    interval-minutes: ${WATCHDOG_INTERVAL_MINUTES:15}
+  alerting:
+    macos: ${MACOS_NOTIFICATIONS:true}

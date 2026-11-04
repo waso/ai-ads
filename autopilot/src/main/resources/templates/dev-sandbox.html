@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sandbox</title>
+  <th:block th:replace="~{_style :: style}"></th:block>
+</head>
+<body>
+  <h1>Sandbox account</h1>
+  <p class="mut">A simulated Google Ads account. Nothing here is sent to Google. <a th:href="@{/admin}">Admin</a></p>
+  <p th:if="${flash}" class="card ok" th:text="${flash}"></p>
+
+  <div class="card">
+    <table><tr th:each="e : ${account}"><td th:text="${e.key}"></td><td th:text="${e.value}"></td></tr></table>
+  </div>
+
+  <h2>Safety state</h2>
+  <div class="card">
+    <p>Kill switch: <strong th:class="${control.killSwitch} ? 'bad' : 'ok'" th:text="${control.killSwitch} ? 'ON' : 'off'"></strong> ·
+       circuit breaker: <strong th:class="${control.breakerOpen} ? 'bad' : 'ok'" th:text="${control.breakerOpen} ? 'OPEN' : 'closed'"></strong></p>
+    <table th:unless="${alerts.isEmpty()}">
+      <tr th:each="a : ${alerts}"><td th:text="${a.severity}"></td><td th:text="${a.type}"></td><td th:text="${a.message}"></td></tr>
+    </table>
+    <p class="mut" th:if="${alerts.isEmpty()}">No open alerts.</p>
+    <form th:action="@{/dev/sandbox/watchdog}" method="post"><div class="row"><button class="go" type="submit">Run the watchdog now</button></div></form>
+  </div>
+
+  <h2>Break something</h2>
+  <div class="card">
+    <form th:action="@{/dev/sandbox/spend}" method="post">
+      <p>Pretend a campaign has spent this much today (PLN). The watchdog alerts at 1.5x and trips the breaker at 1.8x the daily budgets.</p>
+      <input type="text" name="campaignId" value="100" aria-label="Campaign id">
+      <input type="text" name="amount" value="200" aria-label="Amount spent today">
+      <div class="row"><button type="submit">Set spend today</button></div>
+    </form>
+  </div>
+  <div class="card">
+    <form th:action="@{/dev/sandbox/tracking}" method="post">
+      <p>Conversion tracking: <code>healthy</code>, <code>none</code>, <code>signup</code> (only a sign-up is primary) or <code>silent</code> (the sale action records nothing).</p>
+      <input type="text" name="mode" value="silent" aria-label="Tracking mode">
+      <div class="row"><button type="submit">Set conversion tracking</button></div>
+    </form>
+  </div>
+  <div class="card">
+    <form th:action="@{/dev/sandbox/policy}" method="post">
+      <p>Disapprove an ad. Ad ids look like <code>110~1</code> (ad group 110, ad 1); 110, 120, 210 and 910 each have one.</p>
+      <input type="text" name="adId" value="110~1" aria-label="Ad id">
+      <div class="row"><button type="submit">Disapprove ad</button></div>
+    </form>
+    <form th:action="@{/dev/sandbox/policy/clear}" method="post"><div class="row"><button type="submit">Clear policy issues</button></div></form>
+  </div>
+  <div class="card">
+    <form th:action="@{/dev/sandbox/runs/release}" method="post">
+      <p>Each scheduled loop gets one run per window. To run the same loop again today, free the windows.</p>
+      <div class="row"><button type="submit">Let every loop run again</button></div>
+    </form>
+  </div>
+  <div class="card">
+    <form th:action="@{/dev/sandbox/reset}" method="post"><div class="row"><button class="stop" type="submit">Reset the simulated account</button></div></form>
+  </div>
+
+  <h2>What reached the simulated account</h2>
+  <p class="mut" th:if="${sent.isEmpty()}">Nothing yet.</p>
+  <table th:unless="${sent.isEmpty()}"><tr th:each="s : ${sent}"><td><code th:text="${s}"></code></td></tr></table>
+</body>
+</html>

@@ -1,0 +1,44 @@
+# Non-secret settings. The limits live here, outside Claude's reach: changing them is a deployment change, and
+# every change is stored as a new version in config_limits.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ads-autopilot
+  namespace: ads-autopilot
+data:
+  DB_URL: jdbc:postgresql://127.0.0.1:5432/autopilot   # Cloud SQL Auth Proxy sidecar
+  DB_USER: autopilot_app
+  FLYWAY_USER: autopilot_owner
+  OWNER_EMAIL: owner@example.com
+  PUBLIC_BASE_URL: https://autopilot.example.com
+  MCP_AUDIENCE: https://autopilot.example.com/mcp
+  MCP_ISSUER: https://auth.example.com
+  MCP_JWK_SET_URI: https://auth.example.com/.well-known/jwks.json
+  GOOGLE_OAUTH_CLIENT_ID: CHANGE_ME.apps.googleusercontent.com
+  ADS_CUSTOMER_ID: "1234567890"
+  ADS_LOGIN_CUSTOMER_ID: ""
+  ADS_SERVICE_ACCOUNT_EMAIL: ads-autopilot@PROJECT_ID.iam.gserviceaccount.com
+  ACCOUNT_TIME_ZONE: Europe/Warsaw
+  # Required before any write. Account-currency micros (PLN here): 2200.00 = 2200000000
+  MONTHLY_CAP_MICROS: "2200000000"   # 500 PLN a week = 71.4 PLN a day; x 30.4 = 2,171 PLN, so 2,200 PLN leaves room for rounding
+  # Start at L0 and raise it only after each rollout gate passes.
+  AUTONOMY_LEVEL: L0
+  ALLOWED_DOMAINS: vibefactory.ai
+  ALLOWED_GEO_TARGETS: "2616"
+  PRIMARY_GOAL: paid subscriptions
+  # Unit economics in PLN micros. $10 a month is about 38 PLN (at ~3.8 PLN per USD: use your real rate).
+  VALUE_PER_SALE_MICROS: "38000000"
+  # Fill these once you know retention. Break-even cost per sale = lifetime value x gross margin; the server refuses
+  # a target CPA above it. Example: 6 months at 80% margin = 38 x 6 x 0.8 = about 182 PLN.
+  LIFETIME_VALUE_MICROS: ""
+  GROSS_MARGIN_PCT: ""
+  TARGET_CPA_MICROS: ""
+  # About 71 PLN a day: at most 3 campaigns, none under 20 PLN a day, and a week between changes to the same thing.
+  MAX_ACTIVE_CAMPAIGNS: "3"
+  MIN_DAILY_BUDGET_MICROS: "20000000"
+  COOLDOWN_HOURS: "168"
+  PROTECTED_TERMS: your brand
+  ALERT_EMAIL_TO: owner@example.com
+  ALERT_PUSH_URL: https://ntfy.example.com/ads-autopilot
+  HEARTBEAT_URL: https://hc-ping.example.com/YOUR-UUID
+  KILL_SWITCH: "false"

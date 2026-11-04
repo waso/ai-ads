@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ads-autopilot
+  namespace: ads-autopilot
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: ads-autopilot}
+  template:
+    metadata:
+      labels: {app: ads-autopilot}
+    spec:
+      serviceAccountName: ads-autopilot
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: app
+          image: REGION-docker.pkg.dev/PROJECT_ID/ads/ads-autopilot:0.1.0
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef: {name: ads-autopilot}
+            - secretRef: {name: ads-autopilot}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+          readinessProbe:
+            httpGet: {path: /actuator/health/readiness, port: 8080}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8080}
+            initialDelaySeconds: 40
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 250m, memory: 512Mi}
+            limits: {memory: 768Mi}
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
+          args: ["--structured-logs", "--private-ip", "PROJECT_ID:REGION:INSTANCE"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ads-autopilot
+  namespace: ads-autopilot
+spec:
+  selector: {app: ads-autopilot}
+  ports:
+    - {port: 80, targetPort: 8080}
+---
+# /mcp is called from Anthropic's cloud, so it must be reachable from the internet. Put rate limits in front of it and
+# restrict it to Anthropic's published IP ranges as a second layer. The approval page (/approve, /admin) is opened
+# from the owner's phone and laptop, so it must NOT sit behind that allowlist: give it its own rule (Google sign-in
+# is its protection).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ads-autopilot
+  namespace: ads-autopilot
+  annotations:
+    kubernetes.io/ingress.class: gce
+spec:
+  rules:
+    - host: autopilot.example.com
+      http:
+        paths:
+          - {path: /, pathType: Prefix, backend: {service: {name: ads-autopilot, port: {number: 80}}}}

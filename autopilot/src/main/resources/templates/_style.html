@@ -1,0 +1,13 @@
+<style th:fragment="style">
+  :root { color-scheme: light dark; --fg:#1b1f24; --bg:#fff; --mut:#5b6572; --line:#d5dae1; --ok:#1a7f37; --bad:#b42318; --warn:#9a6700; --card:#f6f8fa; }
+  @media (prefers-color-scheme: dark) { :root { --fg:#e6e9ee; --bg:#14171c; --mut:#9aa4b2; --line:#2d333b; --ok:#3fb950; --bad:#f97066; --warn:#d29922; --card:#1c2128; } }
+  body { font: 16px/1.5 system-ui, sans-serif; color: var(--fg); background: var(--bg); margin: 0; padding: 16px; max-width: 760px; margin-inline: auto; }
+  h1 { font-size: 1.3rem; } h2 { font-size: 1.05rem; margin-top: 1.6rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 10px 0; }
+  .mut { color: var(--mut); font-size: .9rem; } .ok { color: var(--ok); } .bad { color: var(--bad); } .warn { color: var(--warn); }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; } td, th { border-bottom: 1px solid var(--line); padding: 6px 4px; text-align: left; vertical-align: top; }
+  button { font: inherit; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
+  button.go { background: var(--ok); color: #fff; border-color: var(--ok); } button.stop { background: var(--bad); color: #fff; border-color: var(--bad); }
+  input[type=text] { font: inherit; padding: 8px; width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; } code { word-break: break-all; }
+</style>

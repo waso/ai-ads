@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Result</title>
+  <th:block th:replace="~{_style :: style}"></th:block>
+</head>
+<body>
+  <h1>Ads Autopilot</h1>
+  <div class="card"><p th:classappend="${ok} == null ? '' : (${ok} ? 'ok' : 'bad')" th:text="${message}">message</p></div>
+  <p><a th:href="@{/admin}">Overview</a></p>
+</body>
+</html>

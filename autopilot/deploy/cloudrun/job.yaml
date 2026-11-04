@@ -1,0 +1,35 @@
+# The watchdog as a Cloud Run Job. Trigger it every 15 minutes:
+#   gcloud scheduler jobs create http ads-autopilot-watchdog --schedule="*/15 * * * *" \
+#     --uri="https://REGION-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/PROJECT_ID/jobs/ads-autopilot-watchdog:run" \
+#     --http-method=POST --oauth-service-account-email=scheduler@PROJECT_ID.iam.gserviceaccount.com
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: ads-autopilot-watchdog
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/vpc-access-connector: projects/PROJECT_ID/locations/REGION/connectors/ads-autopilot
+        run.googleapis.com/vpc-access-egress: private-ranges-only
+    spec:
+      template:
+        spec:
+          maxRetries: 0
+          timeoutSeconds: 600
+          serviceAccountName: ads-autopilot@PROJECT_ID.iam.gserviceaccount.com
+          containers:
+            - image: REGION-docker.pkg.dev/PROJECT_ID/ads/ads-autopilot:0.1.0
+              env:
+                - {name: SPRING_PROFILES_ACTIVE, value: watchdog}
+                - {name: DB_URL, value: "jdbc:postgresql://CLOUD_SQL_PRIVATE_IP:5432/autopilot?sslmode=require"}
+                - {name: DB_USER, value: autopilot_app}
+                - {name: FLYWAY_USER, value: autopilot_owner}
+                - {name: OWNER_EMAIL, value: owner@example.com}
+                - {name: ADS_CUSTOMER_ID, value: "1234567890"}
+                - {name: ADS_SERVICE_ACCOUNT_EMAIL, value: "ads-autopilot@PROJECT_ID.iam.gserviceaccount.com"}
+                - {name: DB_PASSWORD, valueFrom: {secretKeyRef: {name: autopilot-db-password, key: latest}}}
+                - {name: FLYWAY_PASSWORD, valueFrom: {secretKeyRef: {name: autopilot-flyway-password, key: latest}}}
+                - {name: ADS_DEVELOPER_TOKEN, valueFrom: {secretKeyRef: {name: autopilot-ads-developer-token, key: latest}}}
+              resources:
+                limits: {cpu: "1", memory: 768Mi}

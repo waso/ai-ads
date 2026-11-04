@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Proposal</title>
+  <th:block th:replace="~{_style :: style}"></th:block>
+</head>
+<body>
+  <h1 th:text="'Proposal: ' + ${p.tool}">Proposal</h1>
+  <div class="card">
+    <strong th:text="${p.diff.summary}">summary</strong>
+    <p class="mut">Tier <span th:text="${p.tier.substring(1)}">2</span> · filed <span th:text="${p.createdAt}"></span> ·
+       expires <span th:text="${p.expiresAt}"></span> · status <strong th:text="${p.status}"></strong></p>
+  </div>
+
+  <h2>Exact change</h2>
+  <table>
+    <tr><th></th><th>Before</th><th>After</th></tr>
+    <tr th:each="k : ${p.diff.after.keySet()}">
+      <td th:text="${k}"></td>
+      <td th:text="${p.diff.before.get(k)}"></td>
+      <td th:text="${p.diff.after.get(k)}"></td>
+    </tr>
+    <tr th:each="k : ${p.diff.before.keySet()}" th:unless="${p.diff.after.containsKey(k)}">
+      <td th:text="${k}"></td><td th:text="${p.diff.before.get(k)}"></td><td class="mut">removed or unchanged</td>
+    </tr>
+  </table>
+
+  <h2>Why</h2>
+  <p th:text="${p.meta.reason}">reason</p>
+  <p class="mut">Expected effect: <span th:text="${p.meta.expectedEffect}"></span></p>
+  <p class="mut">The server re-checks limits and the live state of the entity when you approve.</p>
+
+  <form th:if="${pending}" th:action="@{/approve/{id}/approve(id=${p.id})}" method="post" class="card">
+    <input type="hidden" name="e" th:value="${exp}"><input type="hidden" name="n" th:value="${nonce}"><input type="hidden" name="s" th:value="${sig}">
+    <div class="row"><button class="go" type="submit">Approve</button></div>
+  </form>
+  <form th:if="${pending}" th:action="@{/approve/{id}/reject(id=${p.id})}" method="post" class="card">
+    <input type="hidden" name="e" th:value="${exp}"><input type="hidden" name="n" th:value="${nonce}"><input type="hidden" name="s" th:value="${sig}">
+    <label class="mut">Reason (optional)<input type="text" name="note" maxlength="300"></label>
+    <div class="row"><button class="stop" type="submit">Reject</button></div>
+  </form>
+  <p th:unless="${pending}" class="warn">This proposal is no longer pending.</p>
+</body>
+</html>

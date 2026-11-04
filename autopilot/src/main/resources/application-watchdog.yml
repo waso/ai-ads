@@ -1,0 +1,7 @@
+# The watchdog as a one-shot job (Kubernetes CronJob, Cloud Run Job): no web server, run once, exit.
+# Start the same image with SPRING_PROFILES_ACTIVE=watchdog.
+spring:
+  main:
+    web-application-type: none
+autopilot:
+  mode: watchdog

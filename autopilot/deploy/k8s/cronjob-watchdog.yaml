@@ -1,0 +1,53 @@
+# The watchdog: every 15 minutes, no Claude involved. It alerts on spend, disapprovals, stopped delivery, outside
+# changes and conversion drops, and pauses agent-managed campaigns through the circuit breaker. A non-zero exit
+# means a step failed, which the cluster's own job-failure alerting will also catch.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ads-autopilot-watchdog
+  namespace: ads-autopilot
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: ads-autopilot
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: watchdog
+              image: REGION-docker.pkg.dev/PROJECT_ID/ads/ads-autopilot:0.1.0
+              env:
+                - {name: SPRING_PROFILES_ACTIVE, value: watchdog}
+              envFrom:
+                - configMapRef: {name: ads-autopilot}
+                - secretRef: {name: ads-autopilot}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - {name: tmp, mountPath: /tmp}
+              resources:
+                requests: {cpu: 200m, memory: 384Mi}
+                limits: {memory: 640Mi}
+            - name: cloud-sql-proxy
+              image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
+              args: ["--structured-logs", "--private-ip", "--exit-zero-on-sigterm", "PROJECT_ID:REGION:INSTANCE"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+          volumes:
+            - {name: tmp, emptyDir: {}}
